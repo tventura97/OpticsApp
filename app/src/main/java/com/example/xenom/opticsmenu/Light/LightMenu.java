@@ -12,9 +12,11 @@ import android.widget.ArrayAdapter;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 
+import com.example.xenom.opticsmenu.Light.Reflection.LawOfReflection;
 import com.example.xenom.opticsmenu.Light.Refraction.RefractionMenu;
 import com.example.xenom.opticsmenu.Light.Refraction.Refraction_Background;
 import com.example.xenom.opticsmenu.R;
+import com.example.xenom.opticsmenu.UI.SplashActivity;
 
 import java.util.ArrayList;
 
@@ -41,12 +43,16 @@ public class LightMenu extends AppCompatActivity {
                         startActivity(intent);
                         break;
                     case 1:
-                        break;
-                    case 2:
-                        Intent intent1 = new Intent(LightMenu.this, RefractionMenu.class);
+                        Intent intent1 = new Intent(LightMenu.this, SplashActivity.class);
                         startActivity(intent1);
                         break;
+                    case 2:
+                        Intent intent2 = new Intent(LightMenu.this, RefractionMenu.class);
+                        startActivity(intent2);
+                        break;
                     case 3:
+                        Intent intent3 = new Intent(LightMenu.this, LawOfReflection.class);
+                        startActivity(intent3);
                         break;
 
                 }

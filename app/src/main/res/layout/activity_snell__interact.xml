@@ -9,8 +9,8 @@ tools:layout_editor_absoluteY="81dp"
 tools:layout_editor_absoluteX="0dp">
 
 
-<com.jjoe64.graphview.GraphView
-    android:layout_width="350dp"
+<com.github.mikephil.charting.charts.LineChart
+    android:layout_width="300dp"
     android:layout_height="450dp"
     android:id="@+id/graph"
     app:layout_constraintBottom_toTopOf="@+id/textN1"

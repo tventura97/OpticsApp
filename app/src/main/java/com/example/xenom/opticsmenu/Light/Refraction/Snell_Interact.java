@@ -1,5 +1,6 @@
 package com.example.xenom.opticsmenu.Light.Refraction;
 
+import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.support.v7.app.AppCompatActivity;
@@ -8,18 +9,25 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.example.xenom.opticsmenu.R;
+import com.github.mikephil.charting.charts.LineChart;
+import com.github.mikephil.charting.data.Entry;
+import com.github.mikephil.charting.data.LineData;
+import com.github.mikephil.charting.data.LineDataSet;
 import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.GridLabelRenderer;
 import com.jjoe64.graphview.series.DataPoint;
 import com.jjoe64.graphview.series.LineGraphSeries;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Better comments as well as a continuation document will be added
+ * MPAndroidChart uses floats for some reason so just cast everything to a float
  */
 
 public class Snell_Interact extends AppCompatActivity {
-    private GraphView graph;
-    private LineGraphSeries<DataPoint> series;
+    private LineChart graph;
     private TextView textViewN1;
     private TextView textViewN2;
     private SeekBar seekBarN1;
@@ -29,7 +37,7 @@ public class Snell_Interact extends AppCompatActivity {
     double N1 = 1.00; //Initialze both indexes of refraction to 1.00;
     double N2 = 1.00;
     int beamlength = 10; //Length of beam of light is 10 units.
-    double[] DataPointsRight = {0, 0};
+    double[] DataPointsRight = {0, 0};      //x = DataPoints[0]; y = DataPoints[1]
 
 
 
@@ -37,8 +45,8 @@ public class Snell_Interact extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_snell__interact);
-
-        graph = (GraphView) findViewById(R.id.graph);
+        setTitle("Snell's Law");
+        graph = (LineChart)findViewById(R.id.graph);
         textViewN1 = (TextView) findViewById(R.id.textN1);
         textViewN2 = (TextView) findViewById(R.id.textN2);
         seekBarN1 = (SeekBar) findViewById(R.id.seekbarN1);
@@ -51,37 +59,13 @@ public class Snell_Interact extends AppCompatActivity {
          * . This means we can increment by 0.01 when the user alters the index of refraction using the seekbar to watch what happens to the light beams as they pass through the different mediums.
          */
 
-        //This segment of code will set the bounds for the graph.
-        graph.getViewport().setXAxisBoundsManual(true);
-        graph.getViewport().setMinX(-10);
-        graph.getViewport().setMaxX(10);
-        graph.getViewport().setYAxisBoundsManual(true);
-        graph.getViewport().setMinY(-10);
-        graph.getViewport().setMaxY(10);
         seekBarN1.setMax(300);
         seekBarN2.setMax(300);
-        series.setThickness(5);     //Set Line Thickness to 5
+
+        configureGraph();   // Configures graph formatting settings
 
 
-        //Sets background
-        int imageResource = getResources().getIdentifier("@drawable/graph_background", null, getPackageName());
-        Drawable graph_background = getResources().getDrawable(imageResource);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-            graph.setBackground(graph_background);
-        }
-        //Erases all graph gridlines
-        graph.getGridLabelRenderer().setGridStyle(GridLabelRenderer.GridStyle.NONE);// It will remove the background grids
-        graph.getGridLabelRenderer().setHorizontalLabelsVisible(false);// remove horizontal x labels and line
-        graph.getGridLabelRenderer().setVerticalLabelsVisible(false);
 
-        //Initialize series to default value;
-        series = new LineGraphSeries<>(new DataPoint[]{
-                new DataPoint(0, 10),       //Hard coded here because I'm lazy
-                new DataPoint(0, 0), //We have defined the origin to be the point where the light beam changes mediums
-                new DataPoint(0, -10)
-        });
-
-        graph.addSeries(series);
         seekBarN1.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
 
             int progress = 0;
@@ -112,21 +96,14 @@ public class Snell_Interact extends AppCompatActivity {
 
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                graph.removeAllSeries();
+                graph.clear();
                 textViewN2.setText("Index of Refraction N2: " + N2);
-                this.progress = progress;
                 setN2(seekBarN2.getProgress() / 100.0 + 1.00);
                 setThetaTwo();
+                this.progress = progress;
+                generateDataPointsRight();
+                generateGraph();
 
-                DataPointsRight = generateDataPointsRight();
-
-
-                series = new LineGraphSeries<>(new DataPoint[]{
-                        new DataPoint(0, 10),               //Hard-coded here because I'm lazy right now, I'll change it later
-                        new DataPoint(0, 0),                //We have defined the origin to be the point where the light beam changes mediums
-                        new DataPoint(DataPointsRight[0], DataPointsRight[1])
-                });
-                graph.addSeries(series);
             }
 
             @Override
@@ -136,23 +113,25 @@ public class Snell_Interact extends AppCompatActivity {
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-                textViewN2.setText("Index of Refraction N2: " + N2);
+
+
 
             }
         });
+
+        initializeGraph();              //Initializes graph
 
 
     }
 
 
-    public double[] generateDataPointsRight() {
+    public void generateDataPointsRight() {
         double x, y;
         x = beamlength * Math.cos(Math.toRadians(theta2));        //Simple trigonometry & Snell's law dictates this relationship.
         y = -1 * beamlength * Math.sin(Math.toRadians(theta2));         //Negative because we know that the beam of light is travelling downward
 
         DataPointsRight[0] = x;
         DataPointsRight[1] = y;
-        return DataPointsRight;
 
 
     }
@@ -173,17 +152,107 @@ public class Snell_Interact extends AppCompatActivity {
         this.N2 = N2;
     }
 
-    public void generateGraph() {
+    /**
+     * Graph formatting settings
+     * All grid lines disabled
+     * All labels disabled
+     * Legend disabled
+     * Background image set to @drawable/graph_background
+     * X-limits set to -10:10
+     * Y-limits set to -10:10
+     * Touch interactivity disabled
+     */
 
-        double x = 0;
-        double y =0;
-        double slope = DataPointsRight[1]/DataPointsRight[0];
-        while(x < DataPointsRight[0])
+    public void configureGraph() {
+
+        /**
+         * When setting the graph background, the image MUST be the same dimensions as the LineChart, or graph.
+         */
+        int imageResource = getResources().getIdentifier("@drawable/graph_background", null, getPackageName());
+        graph.setBackgroundResource(imageResource);
+
+        graph.getAxisLeft().setDrawGridLines(false);
+        graph.getAxisLeft().setDrawAxisLine(false);
+        graph.getAxisLeft().setDrawLabels(false);
+        graph.getAxisRight().setDrawAxisLine(false);
+        graph.getAxisRight().setDrawGridLines(false);
+        graph.getAxisRight().setDrawLabels(false);
+        graph.getXAxis().setDrawLabels(false);
+        graph.getXAxis().setDrawAxisLine(false);
+        graph.getXAxis().setDrawGridLines(false);
+        graph.getLegend().setEnabled(false);
+        graph.getDescription().setEnabled(false);
+        graph.setTouchEnabled(false);
+        graph.getXAxis().setAxisMinimum((float)-10.0);
+        graph.getXAxis().setAxisMaximum((float) 10.0);
+        graph.getAxisLeft().setAxisMinimum((float)-10.0);
+        graph.getAxisLeft().setAxisMaximum((float)10.0);
+
+    }
+
+    public void generateGraph()
+    {
+        double x = 0.0;
+        double y = 20.0;                    //Starting our graph from 20
+        double x_end = DataPointsRight[0];
+        double y_end = DataPointsRight[1];
+        List<Entry> entries = new ArrayList<Entry>();
+
+        /**
+         * This loop will render the initial light beam. (before it crosses into the second medium)
+         */
+
+
+        while (y >= 0)
         {
-
-
-
+            y = y-0.1;
+            entries.add(new Entry((float) x, (float) y));
         }
+
+        /**
+         * Loop adds 100 datapoints to the chart. This will render the refracted light beam (after it crosses into the second medium)
+         */
+        for (int i = 0; i < 100; i++)
+        {
+            y = y + y_end/100;
+            x = x + x_end/100;
+            entries.add(new Entry((float) x, (float) y));
+        }
+
+        LineDataSet dataSet = new LineDataSet(entries, "Label");
+        dataSet.setDrawCircles(false);
+        dataSet.setLineWidth((float) 20.0);
+        dataSet.setColor(Color.RED);
+        LineData lineData = new LineData(dataSet);
+        graph.setData(lineData);                // Gives the graph the data generated
+        graph.invalidate();                     // Renders graph
+        //graph.animateX(750);                    // Animates the formation of the data. (milliseconds)
+
+
+
+
+    }
+
+    public void initializeGraph()
+    {
+        double x = 0.0;
+        double y = 10.0;
+        List<Entry> entries = new ArrayList<Entry>();
+        while (y > -10)
+        {
+            y = y-0.1;
+            entries.add(new Entry((float) x, (float) y));
+        }
+
+        LineDataSet dataSet = new LineDataSet(entries, "Label");
+        dataSet.setDrawCircles(false);
+        dataSet.setLineWidth((float) 20.0);
+        dataSet.setColor(Color.RED);
+        LineData lineData = new LineData(dataSet);
+        graph.setData(lineData);                // Gives the graph the data generated
+        graph.invalidate();                     // Renders graph
+        graph.animateX(2000);                    // Animates the formation of the data. (milliseconds)
+
 
     }
 }
