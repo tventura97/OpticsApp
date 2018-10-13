@@ -1,3 +1,4 @@
 # OpticsApp
 
-Teaches you optics. No functionality right now. 
+Educational app designed to supplement a university-level physics curriculum.
+Graphically demonstrates and teaches ray-tracing concepts
